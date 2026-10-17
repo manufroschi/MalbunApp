@@ -3,7 +3,7 @@
   "appName": "Malbun",
   "webDir": "www",
   "server": {
-    "url": "https://DEINE-SEITE.pages.dev",
+    "url": "https://malbun27.mnfr4352.workers.dev",
     "cleartext": false
   },
   "android": {
