@@ -1,0 +1,86 @@
+name: Android-App bauen
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Website-Adresse prüfen
+        run: |
+          if grep -q "DEINE-SEITE" capacitor.config.json; then
+            echo "::error::Bitte in capacitor.config.json die Adresse deiner Website eintragen."
+            exit 1
+          fi
+          grep '"url"' capacitor.config.json
+
+      - name: Ersatzseite ohne Internet
+        run: |
+          mkdir -p www
+          if [ -f index.html ]; then cp index.html www/index.html; else
+            echo '<!doctype html><meta charset="utf-8"><body style="font-family:sans-serif;text-align:center;padding:40px;background:#0b3d91;color:#fff"><h1>Malbun</h1><p>Keine Verbindung.</p><button onclick="location.reload()">Erneut versuchen</button></body>' > www/index.html
+          fi
+
+      - name: Abhängigkeiten installieren
+        run: npm install
+
+      - name: Android-Projekt erzeugen
+        run: |
+          npx cap add android
+          npx cap sync android
+
+      - name: App-Icon einsetzen
+        run: |
+          command -v convert || (sudo apt-get update && sudo apt-get install -y imagemagick)
+          SRC="$(ls -S ic_launcher*.png 2>/dev/null | grep -v round | head -1)"
+          if [ -n "$SRC" ]; then
+            RES=android/app/src/main/res
+            rm -rf "$RES/mipmap-anydpi-v26"
+            for d in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
+              n="${d%%:*}"; s="${d##*:}"
+              mkdir -p "$RES/mipmap-$n"
+              convert "$SRC" -resize "${s}x${s}" "$RES/mipmap-$n/ic_launcher.png"
+              convert "$SRC" -resize "${s}x${s}" "$RES/mipmap-$n/ic_launcher_round.png"
+            done
+          fi
+
+      - name: APK bauen
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk ../Malbun.apk
+
+      - name: APK als Download bereitstellen
+        uses: actions/upload-artifact@v4
+        with:
+          name: Malbun-APK
+          path: Malbun.apk
+
+      - name: Öffentlichen Download-Link aktualisieren
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete app --yes --cleanup-tag || true
+          gh release create app Malbun.apk \
+            --title "Malbun-App (Android)" \
+            --notes "Neueste Version der Malbun-App. Auf dem Android-Handy herunterladen, öffnen und die Installation erlauben."
