@@ -1,0 +1,17 @@
+{
+  "name": "malbun-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Android-App für die Skifreizeit Malbun – lädt die Malbun-Website und ergänzt GPS im Hintergrund",
+  "scripts": {
+    "prepare-android": "npx cap add android && node scripts/patch-android.mjs && npx cap sync android"
+  },
+  "dependencies": {
+    "@capacitor-community/background-geolocation": "1.2.26",
+    "@capacitor/android": "8.5.3",
+    "@capacitor/core": "8.5.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.3"
+  }
+}

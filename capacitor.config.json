@@ -1,0 +1,13 @@
+{
+  "appId": "de.malbun.skifreizeit",
+  "appName": "Malbun",
+  "webDir": "www",
+  "server": {
+    "url": "https://DEINE-SEITE.pages.dev",
+    "cleartext": false
+  },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#0b3d91"
+  }
+}
